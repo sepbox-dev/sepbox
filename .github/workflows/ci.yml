@@ -75,3 +75,27 @@ jobs:
       - name: Build Soroban WASM artifact
         working-directory: contracts
         run: stellar contract build
+
+  inspector-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install inspector dependencies
+        working-directory: inspector
+        run: npm install --no-audit --no-fund
+
+      - name: Build Next.js inspector
+        working-directory: inspector
+        env:
+          NEXT_PUBLIC_ENGINE_URL: http://localhost:8000
+        run: npm run build
+
+      - name: Run TypeScript typecheck
+        working-directory: inspector
+        run: npm run typecheck
