@@ -50,3 +50,25 @@ jobs:
           DATABASE_URL: postgresql+psycopg://sepbox:sepbox@localhost:5432/sepbox
           PYTHONPATH: .
         run: pytest -v
+
+  contract-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts
+
+      - name: Run Soroban contract unit tests
+        working-directory: contracts
+        run: cargo test --verbose
+
+      - name: Build Soroban WASM artifact
+        working-directory: contracts
+        run: cargo build --target wasm32v1-none --release
