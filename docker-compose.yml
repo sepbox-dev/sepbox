@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sepbox
+      POSTGRES_PASSWORD: sepbox
+      POSTGRES_DB: sepbox
+    ports:
+      - "5432:5432"
+    volumes:
+      - sepbox_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sepbox -d sepbox"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  engine:
+    build:
+      context: ./engine
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql+psycopg://sepbox:sepbox@db:5432/sepbox
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  sepbox_pgdata:
