@@ -14,6 +14,7 @@ from app.config import get_anchor_keypair, get_settings
 from app.db import get_db
 from app.models import Quote, Sep24Transaction, utc_now
 from app.sep10 import get_authenticated_account
+from app.webhooks import dispatch_transaction_webhook
 
 router = APIRouter(prefix="/sep24", tags=["SEP-24"])
 
@@ -332,4 +333,7 @@ def advance_transaction_state(
 
     db.commit()
     db.refresh(tx)
-    return {"transaction": _serialize_transaction(tx)}
+
+    serialized = _serialize_transaction(tx)
+    dispatch_transaction_webhook(db, serialized, event_type="sep24.transaction.updated")
+    return {"transaction": serialized}

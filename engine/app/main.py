@@ -3,19 +3,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.chaos import chaos_middleware, router as chaos_router
 from app.config import get_anchor_keypair, get_settings
 from app.db import check_database_connection
+from app.inspector import router as inspector_router, traffic_inspector_middleware
 from app.sep1 import router as sep1_router
 from app.sep10 import router as sep10_router
 from app.sep12 import router as sep12_router
 from app.sep24 import router as sep24_router
 from app.sep38 import router as sep38_router
+from app.webhooks import router as webhooks_router
 
 app = FastAPI(
     title="SEPBox Anchor Engine",
-    version="0.4.0",
+    version="0.5.0",
     description="Local-first Stellar SEP Anchor & Chaos Testing Engine",
 )
 
+# Middleware executes outermost-last: CORS -> Traffic Inspector -> Chaos -> Route
 app.middleware("http")(chaos_middleware)
+app.middleware("http")(traffic_inspector_middleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,6 +34,8 @@ app.include_router(sep12_router)
 app.include_router(sep24_router)
 app.include_router(sep38_router)
 app.include_router(chaos_router)
+app.include_router(webhooks_router)
+app.include_router(inspector_router)
 
 
 @app.get("/health")

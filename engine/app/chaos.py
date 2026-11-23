@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/admin/chaos", tags=["Chaos"])
 
-PROTECTED_PREFIXES = ("/health", "/admin/chaos", "/docs", "/openapi.json")
+PROTECTED_PREFIXES = ("/health", "/admin/", "/docs", "/openapi.json")
 
 
 @dataclass
