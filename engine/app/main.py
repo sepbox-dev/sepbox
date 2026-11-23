@@ -4,10 +4,12 @@ from app.config import get_anchor_keypair, get_settings
 from app.db import check_database_connection
 from app.sep1 import router as sep1_router
 from app.sep10 import router as sep10_router
+from app.sep12 import router as sep12_router
+from app.sep38 import router as sep38_router
 
 app = FastAPI(
     title="SEPBox Anchor Engine",
-    version="0.2.0",
+    version="0.3.0",
     description="Local-first Stellar SEP Anchor & Chaos Testing Engine",
 )
 
@@ -20,6 +22,8 @@ app.add_middleware(
 
 app.include_router(sep1_router)
 app.include_router(sep10_router)
+app.include_router(sep12_router)
+app.include_router(sep38_router)
 
 
 @app.get("/health")

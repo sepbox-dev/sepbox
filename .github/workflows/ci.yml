@@ -2,15 +2,14 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
   pull_request:
-    branches:
-      - main
+    branches: ["main"]
 
 jobs:
   engine-tests:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -27,21 +26,27 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: engine/requirements.txt
 
-      - name: Install dependencies
+      - name: Install engine dependencies
         run: pip install -r engine/requirements.txt
 
-      - name: Run engine tests
+      - name: Run Alembic database migrations
+        working-directory: engine
+        env:
+          DATABASE_URL: postgresql+psycopg://sepbox:sepbox@localhost:5432/sepbox
+          PYTHONPATH: .
+        run: alembic upgrade head
+
+      - name: Run engine pytest suite
         working-directory: engine
         env:
           DATABASE_URL: postgresql+psycopg://sepbox:sepbox@localhost:5432/sepbox
           PYTHONPATH: .
         run: pytest -v
-
