@@ -1,7 +1,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, BytesN, Env,
+    contract, contracterror, contractevent, contractimpl, contracttype, token, Address, BytesN,
+    Env,
 };
 
 #[cfg(test)]
@@ -67,6 +68,48 @@ pub enum DataKey {
     Settlement(BytesN<32>),
 }
 
+#[contractevent(topics = ["vault", "init"])]
+pub struct VaultInitialized {
+    pub admin: Address,
+    pub operator: Address,
+    pub token: Address,
+}
+
+#[contractevent(topics = ["vault", "funded"])]
+pub struct VaultFunded {
+    #[topic]
+    pub from: Address,
+    pub amount: i128,
+}
+
+#[contractevent(topics = ["vault", "deposit"])]
+pub struct DepositSettled {
+    #[topic]
+    pub tx_id: BytesN<32>,
+    pub recipient: Address,
+    pub amount: i128,
+    pub fee: i128,
+}
+
+#[contractevent(topics = ["vault", "withdraw"])]
+pub struct WithdrawalRecorded {
+    #[topic]
+    pub tx_id: BytesN<32>,
+    pub sender: Address,
+    pub amount: i128,
+    pub fee: i128,
+}
+
+#[contractevent(topics = ["vault", "paused"])]
+pub struct VaultPaused {
+    pub paused: bool,
+}
+
+#[contractevent(topics = ["vault", "operator"])]
+pub struct OperatorRotated {
+    pub new_operator: Address,
+}
+
 #[contract]
 pub struct AnchorVaultContract;
 
@@ -122,8 +165,12 @@ impl AnchorVaultContract {
         store.set(&DataKey::TotalFees, &0_i128);
         Self::extend_instance(&env);
 
-        env.events()
-            .publish((symbol_short!("vault"), symbol_short!("init")), (admin, operator, token));
+        VaultInitialized {
+            admin,
+            operator,
+            token,
+        }
+        .publish(&env);
         Ok(())
     }
 
@@ -148,8 +195,7 @@ impl AnchorVaultContract {
         Self::extend_instance(&env);
 
         let updated_balance = token_client.balance(&vault_addr);
-        env.events()
-            .publish((symbol_short!("vault"), symbol_short!("funded")), (from, amount));
+        VaultFunded { from, amount }.publish(&env);
         Ok(updated_balance)
     }
 
@@ -233,10 +279,13 @@ impl AnchorVaultContract {
             .set(&DataKey::TotalFees, &next_fees);
         Self::extend_instance(&env);
 
-        env.events().publish(
-            (symbol_short!("vault"), symbol_short!("deposit")),
-            (tx_id, recipient, amount),
-        );
+        DepositSettled {
+            tx_id,
+            recipient,
+            amount,
+            fee,
+        }
+        .publish(&env);
         Ok(record)
     }
 
@@ -310,10 +359,13 @@ impl AnchorVaultContract {
             .set(&DataKey::TotalFees, &next_fees);
         Self::extend_instance(&env);
 
-        env.events().publish(
-            (symbol_short!("vault"), symbol_short!("withdraw")),
-            (tx_id, sender, amount),
-        );
+        WithdrawalRecorded {
+            tx_id,
+            sender,
+            amount,
+            fee,
+        }
+        .publish(&env);
         Ok(record)
     }
 
@@ -329,8 +381,7 @@ impl AnchorVaultContract {
         env.storage().instance().set(&DataKey::Paused, &paused);
         Self::extend_instance(&env);
 
-        env.events()
-            .publish((symbol_short!("vault"), symbol_short!("paused")), paused);
+        VaultPaused { paused }.publish(&env);
         Ok(())
     }
 
@@ -348,8 +399,7 @@ impl AnchorVaultContract {
             .set(&DataKey::Operator, &new_operator);
         Self::extend_instance(&env);
 
-        env.events()
-            .publish((symbol_short!("vault"), symbol_short!("operator")), new_operator);
+        OperatorRotated { new_operator }.publish(&env);
         Ok(())
     }
 
