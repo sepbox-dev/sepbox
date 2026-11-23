@@ -1,17 +1,21 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.chaos import chaos_middleware, router as chaos_router
 from app.config import get_anchor_keypair, get_settings
 from app.db import check_database_connection
 from app.sep1 import router as sep1_router
 from app.sep10 import router as sep10_router
 from app.sep12 import router as sep12_router
+from app.sep24 import router as sep24_router
 from app.sep38 import router as sep38_router
 
 app = FastAPI(
     title="SEPBox Anchor Engine",
-    version="0.3.0",
+    version="0.4.0",
     description="Local-first Stellar SEP Anchor & Chaos Testing Engine",
 )
+
+app.middleware("http")(chaos_middleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +27,9 @@ app.add_middleware(
 app.include_router(sep1_router)
 app.include_router(sep10_router)
 app.include_router(sep12_router)
+app.include_router(sep24_router)
 app.include_router(sep38_router)
+app.include_router(chaos_router)
 
 
 @app.get("/health")
