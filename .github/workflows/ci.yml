@@ -65,10 +65,13 @@ jobs:
         with:
           workspaces: contracts
 
+      - name: Install Stellar CLI
+        uses: stellar/stellar-cli@v30.0.1
+
       - name: Run Soroban contract unit tests
         working-directory: contracts
         run: cargo test --verbose
 
       - name: Build Soroban WASM artifact
         working-directory: contracts
-        run: cargo build --target wasm32v1-none --release
+        run: stellar contract build
