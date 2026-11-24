@@ -24,10 +24,21 @@ def test_traffic_inspector_captures_requests_and_ignores_self():
     assert paths == ["/sep38/info", "/sep24/info"]
     assert all(event["chaos_injected"] is False for event in log["events"])
     assert all(event["duration_ms"] >= 0 for event in log["events"])
+    assert all("application/json" in event["content_type"] for event in log["events"])
 
     # Polling /admin/traffic must not add itself to the ring buffer
     second_poll = client.get("/admin/traffic").json()
     assert second_poll["count"] == 2
+
+
+def test_traffic_inspector_ignores_admin_polling_and_options_preflight():
+    assert client.get("/admin/overview").status_code == 200
+    assert client.get("/admin/webhooks").status_code == 200
+    assert client.get("/admin/webhooks/deliveries").status_code == 200
+    client.options("/sep24/info")
+
+    log = client.get("/admin/traffic").json()
+    assert log["count"] == 0
 
 
 def test_traffic_inspector_flags_chaos_injected_responses():

@@ -22,7 +22,7 @@ _buffer: deque[dict[str, object]] = deque(maxlen=BUFFER_CAPACITY)
 
 async def traffic_inspector_middleware(request: Request, call_next):
     path = request.url.path
-    if path.startswith("/admin/traffic"):
+    if path.startswith("/admin/") or request.method == "OPTIONS":
         return await call_next(request)
 
     start = time.perf_counter()
@@ -37,6 +37,7 @@ async def traffic_inspector_middleware(request: Request, call_next):
         "query": str(request.url.query),
         "status_code": response.status_code,
         "duration_ms": duration_ms,
+        "content_type": response.headers.get("content-type", ""),
         "chaos_injected": response.headers.get("x-sepbox-chaos-injected") == "true",
     }
     with _lock:
