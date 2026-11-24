@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
+  --background: #09090B;
+  --foreground: #F2F2EE;
 }
 
 body {
@@ -13,18 +13,89 @@ body {
   min-height: 100vh;
 }
 
-/* Custom crisp dark scrollbar */
+/* Custom Sleek Range Slider */
+.sepbox-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: #2A2A32;
+  border-radius: 1px;
+  outline: none;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+.sepbox-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  background: #2A2A32;
+  border-radius: 1px;
+}
+
+.sepbox-slider::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  background: #2A2A32;
+  border-radius: 1px;
+}
+
+.sepbox-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #F2F2EE;
+  border: 1px solid #141418;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  margin-top: -5px;
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+.sepbox-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.sepbox-slider:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+.sepbox-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #F2F2EE;
+  border: 1px solid #141418;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+/* Range slider thumb turns Signal Amber when chaos is active */
+.sepbox-slider-armed::-webkit-slider-thumb,
+.chaos-armed .sepbox-slider::-webkit-slider-thumb {
+  background: #F59E0B;
+}
+
+.sepbox-slider-armed::-moz-range-thumb,
+.chaos-armed .sepbox-slider::-moz-range-thumb {
+  background: #F59E0B;
+}
+
+/* Precision Thin Dark Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #09090B;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 3px;
+  background: #1E1E24;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #292932;
 }

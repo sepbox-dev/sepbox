@@ -54,6 +54,7 @@ export interface TrafficEvent {
   query: string;
   status_code: number;
   duration_ms: number;
+  content_type?: string;
   chaos_injected: boolean;
 }
 
@@ -90,6 +91,7 @@ export interface WebhookDelivery {
 
 export interface ProbeResult {
   url: string;
+  method: string;
   status: number;
   statusText: string;
   durationMs: number;
@@ -97,6 +99,8 @@ export interface ProbeResult {
   body: string;
   isJson: boolean;
   timestamp: string;
+  contentType?: string;
+  chaosInjected?: boolean;
   error?: string;
 }
 

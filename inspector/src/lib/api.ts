@@ -165,11 +165,16 @@ export async function probeEndpoint(path: string): Promise<ProbeResult> {
       headers[key] = value;
     });
 
+    const contentType = headers["content-type"] || "";
+    const chaosInjected = headers["x-sepbox-chaos-injected"] === "true";
+
     const text = await res.text();
+    // Cap at 8KB for UI rendering performance
+    const previewText = text.length > 8192 ? text.slice(0, 8192) + "\n...[truncated at 8KB]" : text;
     let isJson = false;
-    let formattedBody = text;
+    let formattedBody = previewText;
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(previewText);
       formattedBody = JSON.stringify(parsed, null, 2);
       isJson = true;
     } catch {
@@ -178,19 +183,23 @@ export async function probeEndpoint(path: string): Promise<ProbeResult> {
 
     return {
       url: targetUrl,
+      method: "GET",
       status: res.status,
-      statusText: res.statusText,
+      statusText: res.statusText || (res.status === 200 ? "OK" : ""),
       durationMs,
       headers,
       body: formattedBody,
       isJson,
       timestamp,
+      contentType,
+      chaosInjected,
     };
   } catch (err: unknown) {
     const durationMs = Math.round((performance.now() - start) * 100) / 100;
     const msg = err instanceof Error ? err.message : String(err);
     return {
       url: targetUrl,
+      method: "GET",
       status: 0,
       statusText: "Network Error",
       durationMs,
@@ -199,6 +208,33 @@ export async function probeEndpoint(path: string): Promise<ProbeResult> {
       isJson: false,
       timestamp,
       error: msg,
+      chaosInjected: false,
     };
   }
+}
+
+export function generateCurl(params: {
+  method: string;
+  path: string;
+  query?: string;
+  headers?: Record<string, string>;
+  body?: string;
+}): string {
+  const engineUrl = getEngineUrl();
+  const fullPath = params.path.startsWith("/") ? params.path : `/${params.path}`;
+  const queryStr = params.query && params.query.trim() ? `?${params.query.trim()}` : "";
+  const fullUrl = `${engineUrl}${fullPath}${queryStr}`;
+
+  let cmd = `curl -X ${params.method.toUpperCase()} "${fullUrl}"`;
+  if (params.headers) {
+    for (const [k, v] of Object.entries(params.headers)) {
+      if (k.toLowerCase() !== "host" && k.toLowerCase() !== "connection") {
+        cmd += ` \\\n  -H "${k}: ${v}"`;
+      }
+    }
+  }
+  if (params.body && params.method.toUpperCase() !== "GET" && params.method.toUpperCase() !== "HEAD") {
+    cmd += ` \\\n  -d '${params.body.replace(/'/g, "'\\''")}'`;
+  }
+  return cmd;
 }

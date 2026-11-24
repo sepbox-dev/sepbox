@@ -9,10 +9,17 @@ import {
   fetchWebhooks,
   replayDelivery,
 } from "../lib/api";
+import SegmentedControl from "./SegmentedControl";
+import { CopyIcon, CheckIcon, TrashIcon, RefreshIcon } from "./Icons";
 
 interface WebhooksPanelProps {
   onRefreshOverview?: () => void;
 }
+
+const EVENT_OPTIONS = [
+  { label: "sep24.transaction.updated", value: "sep24.transaction.updated" },
+  { label: "* (All)", value: "*" },
+];
 
 export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps) {
   const [subscriptions, setSubscriptions] = useState<WebhookSubscription[]>([]);
@@ -83,7 +90,7 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
 
       setUrl("");
       setCustomSecret("");
-      setActionFeedback("Webhook endpoint registered successfully.");
+      setActionFeedback("Webhook registered.");
       await loadData();
       onRefreshOverview?.();
       setTimeout(() => setActionFeedback(null), 3000);
@@ -98,7 +105,7 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
     try {
       await deleteWebhook(id);
       setSubscriptions((prev) => prev.filter((s) => s.id !== id));
-      setActionFeedback("Webhook subscription removed.");
+      setActionFeedback("Subscription removed.");
       onRefreshOverview?.();
       setTimeout(() => setActionFeedback(null), 3000);
     } catch (err: unknown) {
@@ -113,7 +120,7 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
       setDeliveries((prev) =>
         prev.map((d) => (d.id === id ? updated : d))
       );
-      setActionFeedback(`Delivery ${id.slice(0, 8)} replayed successfully.`);
+      setActionFeedback(`Delivery ${id.slice(0, 8)} replayed.`);
       onRefreshOverview?.();
       setTimeout(() => setActionFeedback(null), 3000);
     } catch (err: unknown) {
@@ -131,146 +138,124 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
   };
 
   return (
-    <div className="bg-[#0E1524] border border-slate-800 rounded p-4 flex flex-col gap-4 font-mono">
-      {/* Panel Header */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-          <h2 className="text-sm font-bold tracking-tight text-white uppercase">
-            Webhooks & Replay Workbench
-          </h2>
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded">
-            {subscriptions.length} subs | {deliveries.length} deliveries
-          </span>
-          <button
-            type="button"
-            onClick={loadData}
-            disabled={loading}
-            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700"
-          >
-            REFRESH
-          </button>
-        </div>
-      </div>
-
-      {/* One-Time Secret Alert Banner */}
-      {newlyCreatedSecret && (
-        <div className="bg-amber-950/40 border border-amber-500/50 rounded p-3 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fadeIn">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 font-bold text-amber-300 text-xs">
-              <span>SECURITY NOTICE: SIGNING SECRET GENERATED</span>
-              <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-200">
-                ONE-TIME DISPLAY
+    <div className="flex flex-col flex-1 bg-[#0D0D10] text-[#F2F2EE] font-sans text-xs overflow-y-auto">
+      <div className="p-3.5 space-y-3.5">
+        {/* One-Time Secret Alert Banner */}
+        {newlyCreatedSecret && (
+          <div className="bg-[#18181E] border border-[#F59E0B]/40 rounded-md p-3 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-sans font-semibold text-[#F59E0B] uppercase tracking-[0.06em]">
+                SIGNING SECRET GENERATED (ONE-TIME VIEW)
               </span>
+              <button
+                type="button"
+                onClick={() => setNewlyCreatedSecret(null)}
+                className="text-[10px] text-[#A0A0AD] hover:text-[#F2F2EE]"
+              >
+                Dismiss
+              </button>
             </div>
-            <p className="text-[11px] text-amber-200/90 font-mono">
-              Store this secret now. The engine stores HMAC signatures and will never display this raw secret again:
+            <p className="text-[11px] text-[#A0A0AD] font-sans">
+              Store this secret securely to verify HMAC signatures:
             </p>
-            <div className="bg-black/60 px-2 py-1 rounded border border-amber-500/30 font-bold text-amber-100 text-[11px] break-all select-all">
-              {newlyCreatedSecret.secret}
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-[#09090B] border border-[#1E1E24] px-2 py-1 rounded-[3px] text-[#F2F2EE] text-[11px] font-mono select-all truncate">
+                {newlyCreatedSecret.secret}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopySecret}
+                className="px-2.5 py-1 rounded-md bg-[#F2F2EE] hover:bg-white text-[#09090B] font-sans font-semibold text-[11px] transition-colors shrink-0 flex items-center gap-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+              >
+                {copiedSecret ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                <span>{copiedSecret ? "Copied" : "Copy"}</span>
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleCopySecret}
-              className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-colors"
-            >
-              {copiedSecret ? "COPIED!" : "COPY SECRET"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewlyCreatedSecret(null)}
-              className="px-2 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs"
-            >
-              DISMISS
-            </button>
+        )}
+
+        {/* Action feedback */}
+        {actionFeedback && (
+          <div className="text-[11px] font-mono text-[#F59E0B]">
+            {actionFeedback}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Feedback Toast */}
-      {actionFeedback && (
-        <div className="text-[11px] px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-cyan-300">
-          {actionFeedback}
-        </div>
-      )}
+        {/* Registration Form */}
+        <form onSubmit={handleRegister} className="space-y-2.5">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472] block">
+            REGISTER WEBHOOK LISTENER
+          </span>
 
-      {/* Register Subscription Form */}
-      <form
-        onSubmit={handleRegister}
-        className="bg-[#090D16] border border-slate-800/80 rounded p-3 text-xs space-y-3"
-      >
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-          Register Webhook Listener (Target URL)
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-          <div className="sm:col-span-6">
+          <div className="space-y-2">
             <input
               type="text"
               required
               placeholder="http://localhost:9000/webhook or https://..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full bg-[#0E1524] border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-[#18181E] border border-[#1E1E24] rounded-md px-2.5 py-1.5 text-[#F2F2EE] text-xs font-mono focus:outline-none focus:border-[#3A3A47] transition-colors"
             />
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+              <SegmentedControl
+                options={EVENT_OPTIONS}
+                value={selectedEvent}
+                onChange={(val) => setSelectedEvent(String(val))}
+              />
+
+              <button
+                type="submit"
+                disabled={registering}
+                className="px-3 py-1.5 rounded-md bg-[#F2F2EE] hover:bg-white text-[#09090B] font-sans text-xs font-semibold transition-all disabled:opacity-50 shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+              >
+                {registering ? "Subscribing..." : "Subscribe"}
+              </button>
+            </div>
           </div>
-          <div className="sm:col-span-3">
-            <select
-              value={selectedEvent}
-              onChange={(e) => setSelectedEvent(e.target.value)}
-              className="w-full bg-[#0E1524] border border-slate-800 rounded px-2 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-500"
-            >
-              <option value="sep24.transaction.updated">
-                sep24.transaction.updated
-              </option>
-              <option value="*">* (All Events)</option>
-            </select>
-          </div>
-          <div className="sm:col-span-3">
+
+          {formError && (
+            <p className="text-[11px] text-[#F87171] font-sans">{formError}</p>
+          )}
+        </form>
+
+        {/* Subscriptions List */}
+        <div className="space-y-2 pt-2 border-t border-[#1E1E24]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+              ACTIVE SUBSCRIPTIONS ({subscriptions.length})
+            </span>
             <button
-              type="submit"
-              disabled={registering}
-              className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-1.5 px-3 rounded text-xs transition-colors"
+              type="button"
+              onClick={loadData}
+              disabled={loading}
+              className="text-[10px] text-[#A0A0AD] hover:text-[#F2F2EE] flex items-center gap-1 font-sans"
             >
-              {registering ? "REGISTERING..." : "+ SUBSCRIBE"}
+              <RefreshIcon className="w-2.5 h-2.5" />
+              <span>Refresh</span>
             </button>
           </div>
-        </div>
-        {formError && (
-          <p className="text-[11px] text-rose-400">{formError}</p>
-        )}
-      </form>
 
-      {/* Grid: Subscriptions (left) & Deliveries (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Active Subscriptions List */}
-        <div className="lg:col-span-5 flex flex-col gap-2">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Active Subscriptions ({subscriptions.length})
-          </span>
-          <div className="border border-slate-800 rounded bg-[#090D16] divide-y divide-slate-800/80 max-h-72 overflow-y-auto text-xs">
+          <div className="border border-[#1E1E24] rounded-md bg-[#09090B] divide-y divide-[#1E1E24] max-h-44 overflow-y-auto">
             {subscriptions.length === 0 ? (
-              <div className="p-4 text-center text-slate-400 text-xs">
-                No active webhook subscriptions.
+              <div className="p-3 text-center text-[#646472] text-xs font-sans">
+                No active webhook endpoints registered.
               </div>
             ) : (
               subscriptions.map((sub) => (
                 <div
                   key={sub.id}
-                  className="p-2.5 flex items-center justify-between gap-2 hover:bg-slate-800/30 transition-colors"
+                  className="p-2.5 flex items-center justify-between gap-2 hover:bg-[#18181E] transition-colors"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span className="font-semibold text-slate-200 truncate text-[11px]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#34D399]" />
+                      <span className="font-mono font-medium text-[#F2F2EE] truncate text-[11px]">
                         {sub.url}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
-                      <span>EVT: {sub.events.join(", ")}</span>
+                    <div className="flex items-center gap-2 text-[10px] text-[#646472] font-mono mt-0.5">
+                      <span>{sub.events.join(", ")}</span>
                       <span>•</span>
                       <span>SEC: {sub.secret_preview || "configured"}</span>
                     </div>
@@ -278,9 +263,10 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
                   <button
                     type="button"
                     onClick={() => handleDelete(sub.id)}
-                    className="text-rose-400 hover:text-rose-300 text-[10px] px-2 py-1 rounded bg-rose-950/30 border border-rose-800/40 hover:bg-rose-900/40"
+                    className="text-[#646472] hover:text-[#F87171] p-1 rounded-sm hover:bg-[#18181E] transition-colors"
+                    title="Delete subscription"
                   >
-                    DEL
+                    <TrashIcon className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))
@@ -288,15 +274,21 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
           </div>
         </div>
 
-        {/* Recent Webhook Deliveries List */}
-        <div className="lg:col-span-7 flex flex-col gap-2">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Recent Deliveries & Replay Log ({deliveries.length})
-          </span>
-          <div className="border border-slate-800 rounded bg-[#090D16] divide-y divide-slate-800/80 max-h-72 overflow-y-auto text-xs">
+        {/* Deliveries & Replay Log */}
+        <div className="space-y-2 pt-2 border-t border-[#1E1E24]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+              RECENT DELIVERIES ({deliveries.length})
+            </span>
+            <span className="text-[10px] text-[#646472] font-sans">
+              Click Inspect to view payload
+            </span>
+          </div>
+
+          <div className="border border-[#1E1E24] rounded-md bg-[#09090B] divide-y divide-[#1E1E24] max-h-56 overflow-y-auto">
             {deliveries.length === 0 ? (
-              <div className="p-4 text-center text-slate-400 text-xs">
-                No webhook deliveries logged yet. Complete a SEP-24 transaction to trigger events.
+              <div className="p-3 text-center text-[#646472] text-xs font-sans">
+                No webhook deliveries recorded yet.
               </div>
             ) : (
               deliveries.map((del) => {
@@ -305,77 +297,74 @@ export default function WebhooksPanel({ onRefreshOverview }: WebhooksPanelProps)
                 return (
                   <div
                     key={del.id}
-                    className="p-2.5 flex flex-col gap-1.5 hover:bg-slate-800/20 transition-colors"
+                    className="p-2 flex flex-col gap-1 hover:bg-[#141418] transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                            isDelivered
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                              : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                          className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                            isDelivered ? "bg-[#34D399]" : "bg-[#F87171]"
                           }`}
-                        >
-                          {del.status.toUpperCase()}{" "}
-                          {del.http_status ? `(${del.http_status})` : ""}
-                        </span>
-                        <span className="text-slate-300 font-medium text-[11px] truncate max-w-[140px] sm:max-w-[200px]">
+                        />
+                        <span className="text-[#F2F2EE] font-mono font-medium text-[11px] truncate">
                           {del.event_type}
+                        </span>
+                        <span className="text-[10px] font-mono text-[#646472] tabular-nums">
+                          {del.http_status ? `HTTP ${del.http_status}` : "FAILED"}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() =>
                             setExpandedDeliveryId(isExpanded ? null : del.id)
                           }
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700"
+                          className="px-1.5 py-0.5 rounded-[2px] bg-[#18181E] hover:bg-[#202028] text-[#A0A0AD] hover:text-[#F2F2EE] text-[10px] border border-[#292932] font-sans"
                         >
-                          {isExpanded ? "HIDE" : "INSPECT"}
+                          {isExpanded ? "Hide" : "Inspect"}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleReplay(del.id)}
                           disabled={replayingId === del.id}
-                          className="px-2 py-0.5 rounded bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 text-[10px] font-bold border border-cyan-800/50 transition-colors"
+                          className="px-1.5 py-0.5 rounded-[2px] bg-[#1C1C22] hover:bg-[#24242C] text-[#F2F2EE] text-[10px] font-sans font-medium border border-[#2E2E38] transition-colors"
                         >
-                          {replayingId === del.id ? "REPLAYING..." : "REPLAY"}
+                          {replayingId === del.id ? "..." : "Replay"}
                         </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-[#646472] tabular-nums">
                       <span>TX: {del.transaction_id.slice(0, 8)}...</span>
                       <span>ATTEMPTS: {del.attempts}</span>
                       <span>{new Date(del.created_at).toLocaleTimeString()}</span>
                     </div>
 
-                    {/* Expandable Payload & Response Preview */}
                     {isExpanded && (
-                      <div className="mt-2 p-2 bg-[#0C121E] border border-slate-800 rounded text-[10px] space-y-2">
+                      <div className="mt-1.5 p-2 bg-[#111115] border border-[#1E1E24] rounded-sm text-[10px] space-y-1.5">
                         <div>
-                          <span className="text-slate-400 font-semibold block mb-0.5">
-                            SIGNATURE:
+                          <span className="text-[#646472] uppercase font-sans text-[9px] block">
+                            SIGNATURE HEADER
                           </span>
-                          <span className="text-slate-300 break-all select-all">
+                          <span className="text-[#F2F2EE] font-mono break-all select-all">
                             {del.signature}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-400 font-semibold block mb-0.5">
-                            PAYLOAD JSON:
+                          <span className="text-[#646472] uppercase font-sans text-[9px] block">
+                            PAYLOAD JSON
                           </span>
-                          <pre className="bg-[#090D16] p-2 rounded text-slate-200 overflow-x-auto max-h-36">
+                          <pre className="bg-[#09090B] p-1.5 rounded-[3px] text-[#F2F2EE] font-mono overflow-x-auto max-h-32">
                             <code>{JSON.stringify(del.payload, null, 2)}</code>
                           </pre>
                         </div>
                         {del.response_body && (
                           <div>
-                            <span className="text-slate-400 font-semibold block mb-0.5">
-                              RESPONSE BODY:
+                            <span className="text-[#646472] uppercase font-sans text-[9px] block">
+                              RECEIVER RESPONSE BODY
                             </span>
-                            <pre className="bg-[#090D16] p-2 rounded text-slate-300 overflow-x-auto max-h-20">
+                            <pre className="bg-[#09090B] p-1.5 rounded-[3px] text-[#A0A0AD] font-mono overflow-x-auto max-h-16">
                               <code>{del.response_body}</code>
                             </pre>
                           </div>

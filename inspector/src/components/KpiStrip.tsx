@@ -4,80 +4,93 @@ import { OverviewCounts } from "../types";
 
 interface KpiStripProps {
   counts: OverviewCounts | null;
-  loading: boolean;
 }
 
-export default function KpiStrip({ counts, loading }: KpiStripProps) {
-  const kpis = [
-    {
-      label: "SEP-12 KYC PROFILES",
-      value: counts?.sep12_customers ?? 0,
-      sub: "Registered Customers",
-      color: "border-sky-500/20 text-sky-400",
-      bg: "bg-sky-500/5",
-    },
-    {
-      label: "SEP-38 QUOTES",
-      value: counts?.sep38_quotes ?? 0,
-      sub: "Indicative & Firm",
-      color: "border-cyan-500/20 text-cyan-400",
-      bg: "bg-cyan-500/5",
-    },
-    {
-      label: "SEP-24 TRANSACTIONS",
-      value: counts?.sep24_transactions ?? 0,
-      sub: "Deposit & Withdraw",
-      color: "border-emerald-500/20 text-emerald-400",
-      bg: "bg-emerald-500/5",
-    },
-    {
-      label: "WEBHOOK DELIVERIES",
-      value: counts?.webhook_deliveries ?? 0,
-      sub: "Dispatched Events",
-      color: "border-purple-500/20 text-purple-400",
-      bg: "bg-purple-500/5",
-    },
-    {
-      label: "SUBSCRIPTIONS",
-      value: counts?.webhook_subscriptions ?? 0,
-      sub: "Active Listeners",
-      color: "border-indigo-500/20 text-indigo-400",
-      bg: "bg-indigo-500/5",
-    },
-    {
-      label: "BUFFERED TRAFFIC",
-      value: `${counts?.buffered_requests ?? 0}/200`,
-      sub: "In-Memory Window",
-      color: "border-amber-500/20 text-amber-400",
-      bg: "bg-amber-500/5",
-    },
-  ];
+export default function KpiStrip({ counts }: KpiStripProps) {
+  const bufferCount = counts?.buffered_requests ?? 0;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-      {kpis.map((kpi) => (
-        <div
-          key={kpi.label}
-          className={`p-3.5 rounded border ${kpi.color} ${kpi.bg} bg-[#0E1524] flex flex-col justify-between transition-all`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono tracking-wider font-semibold text-slate-400 uppercase">
-              {kpi.label}
-            </span>
-            {loading && (
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-600 animate-pulse" />
-            )}
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-mono font-bold tracking-tight text-white">
-              {kpi.value}
-            </span>
-          </div>
-          <span className="text-[11px] font-mono text-slate-400 mt-1">
-            {kpi.sub}
+    <section className="border-b border-[#1E1E24] bg-[#0B0B0E] w-full shrink-0">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full divide-y sm:divide-y-0 sm:divide-x divide-[#1E1E24] text-xs">
+        <div className="p-3 flex flex-col justify-between">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+            SEP-12 KYC
           </span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="text-[18px] font-mono font-semibold text-[#F2F2EE] tabular-nums">
+              {counts?.sep12_customers ?? 0}
+            </span>
+            <span className="text-[10px] font-sans text-[#646472]">registered</span>
+          </div>
         </div>
-      ))}
-    </div>
+
+        <div className="p-3 flex flex-col justify-between">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+            SEP-38 QUOTES
+          </span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="text-[18px] font-mono font-semibold text-[#F2F2EE] tabular-nums">
+              {counts?.sep38_quotes ?? 0}
+            </span>
+            <span className="text-[10px] font-sans text-[#646472]">firm</span>
+          </div>
+        </div>
+
+        <div className="p-3 flex flex-col justify-between">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+            SEP-24 TXS
+          </span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="text-[18px] font-mono font-semibold text-[#F2F2EE] tabular-nums">
+              {counts?.sep24_transactions ?? 0}
+            </span>
+            <span className="text-[10px] font-sans text-[#646472]">tracked</span>
+          </div>
+        </div>
+
+        <div className="p-3 flex flex-col justify-between">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+            SUBSCRIPTIONS
+          </span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="text-[18px] font-mono font-semibold text-[#F2F2EE] tabular-nums">
+              {counts?.webhook_subscriptions ?? 0}
+            </span>
+            <span className="text-[10px] font-sans text-[#646472]">active</span>
+          </div>
+        </div>
+
+        <div className="p-3 flex flex-col justify-between">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+            DELIVERIES
+          </span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="text-[18px] font-mono font-semibold text-[#F2F2EE] tabular-nums">
+              {counts?.webhook_deliveries ?? 0}
+            </span>
+            <span className="text-[10px] font-sans text-[#646472]">dispatched</span>
+          </div>
+        </div>
+
+        <div className="p-3 flex flex-col justify-between">
+          <span className="text-[10px] uppercase font-sans font-medium tracking-[0.06em] text-[#646472]">
+            BUFFER
+          </span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="text-[18px] font-mono font-semibold text-[#F2F2EE] tabular-nums">
+              {bufferCount}
+              <span className="text-xs text-[#646472] font-normal font-sans ml-0.5">/200</span>
+            </span>
+            <span className="text-[10px] font-sans text-[#646472]">window</span>
+          </div>
+          <div className="w-full bg-[#18181E] h-0.5 rounded-full mt-1.5 overflow-hidden">
+            <div
+              className="bg-[#34D399] h-full transition-all duration-300"
+              style={{ width: `${Math.min(100, (bufferCount / 200) * 100)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

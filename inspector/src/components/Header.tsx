@@ -2,113 +2,97 @@
 
 import { useState } from "react";
 import { AnchorInfo } from "../types";
-import { getEngineUrl } from "../lib/api";
+import { CopyIcon, CheckIcon } from "./Icons";
 
 interface HeaderProps {
   connected: boolean;
   anchor: AnchorInfo | null;
-  lastUpdated: Date | null;
+  chaosArmed?: boolean;
 }
 
-export default function Header({ connected, anchor, lastUpdated }: HeaderProps) {
+export default function Header({ connected, anchor, chaosArmed }: HeaderProps) {
   const [copied, setCopied] = useState(false);
-  const engineUrl = getEngineUrl();
+  const signingKey = anchor?.signing_public_key || "";
+  const displayKey = signingKey
+    ? `${signingKey.slice(0, 6)}...${signingKey.slice(-6)}`
+    : "—";
 
   const handleCopyKey = () => {
-    if (!anchor?.signing_public_key) return;
-    navigator.clipboard.writeText(anchor.signing_public_key);
+    if (!signingKey) return;
+    navigator.clipboard.writeText(signingKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <header className="border-b border-slate-800/80 bg-[#0C121E]/90 backdrop-blur sticky top-0 z-30 px-4 lg:px-6 py-3.5">
-      <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Brand & Status */}
-        <div className="flex items-center gap-3.5">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-mono font-bold text-sm tracking-tighter">
-              SB
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-base tracking-tight text-white">
-                  SEPBOX
-                </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 font-semibold uppercase tracking-wider">
-                  Inspector
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono hidden sm:block">
-                Stellar SEP Anchor Engine & Chaos Workbench
-              </p>
-            </div>
+    <header
+      className={`h-12 border-b border-[#1E1E24] bg-[#09090B] px-4 flex items-center justify-between gap-4 sticky top-0 z-30 transition-colors ${
+        chaosArmed ? "border-t-2 border-t-[#F59E0B]" : "border-t-2 border-t-transparent"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-[4px] bg-[#18181E] border border-[#292932] flex items-center justify-center text-[#F2F2EE] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <span className="font-mono font-bold text-[10px] text-[#34D399]">✦</span>
           </div>
-
-          <div className="h-5 w-px bg-slate-800 hidden sm:block" />
-
-          {/* Engine Connectivity Badge */}
-          <div
-            className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${
-              connected
-                ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-400"
-                : "bg-rose-950/40 border-rose-500/30 text-rose-400"
-            }`}
-          >
-            <span className="relative flex h-2 w-2">
-              {connected && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              )}
-              <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
-                  connected ? "bg-emerald-400" : "bg-rose-400"
-                }`}
-              />
-            </span>
-            <span>{connected ? "ENGINE CONNECTED" : "ENGINE OFFLINE"}</span>
-            <span className="text-slate-500 text-[10px]">({engineUrl})</span>
-          </div>
+          <span className="font-sans font-semibold tracking-tight text-[#F2F2EE] text-sm">
+            SEPBox
+          </span>
+          <span className="text-[#646472]">/</span>
+          <span className="text-xs font-sans text-[#A0A0AD]">
+            Inspector
+          </span>
         </div>
 
-        {/* Anchor Details: Network Passphrase & Signing Key */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
-          {/* Network Passphrase */}
-          <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded">
-            <span className="text-slate-400">NET:</span>
+        <div className="h-3 w-px bg-[#1E1E24]" />
+
+        <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#141418] border border-[#1E1E24]">
             <span
-              className="text-slate-200 font-medium max-w-[180px] sm:max-w-[240px] truncate"
-              title={anchor?.network_passphrase || "Test SDF Network"}
+              className={`h-1.5 w-1.5 rounded-full ${
+                connected ? "bg-[#34D399]" : "bg-[#F87171]"
+              }`}
+            />
+            <span
+              className={`text-[10px] font-sans font-medium uppercase tracking-wider ${
+                connected ? "text-[#34D399]" : "text-[#F87171]"
+              }`}
             >
-              {anchor?.network_passphrase || "Test SDF Network"}
+              {connected ? "ONLINE" : "OFFLINE"}
             </span>
           </div>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-[3px] bg-[#18181E] border border-[#292932] text-[#A0A0AD] hidden sm:inline">
+            Testnet
+          </span>
+        </div>
+      </div>
 
-          {/* Anchor Signing Public Key */}
-          {anchor?.signing_public_key && (
-            <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded">
-              <span className="text-slate-400">SIGNER:</span>
-              <span
-                className="text-cyan-400 font-medium truncate max-w-[110px] sm:max-w-[150px]"
-                title={anchor.signing_public_key}
-              >
-                {anchor.signing_public_key.slice(0, 6)}...{anchor.signing_public_key.slice(-6)}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyKey}
-                className="ml-1 px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition-colors border border-slate-700"
-                title="Copy Full Ed25519 Public Key"
-              >
-                {copied ? "COPIED!" : "COPY"}
-              </button>
-            </div>
-          )}
-
-          {lastUpdated && (
-            <span className="text-[10px] text-slate-400 font-mono hidden xl:inline">
-              SYNCED: {lastUpdated.toLocaleTimeString()}
+      <div className="flex items-center gap-3 text-xs">
+        {signingKey && (
+          <div className="flex items-center gap-1.5 bg-[#141418] border border-[#1E1E24] px-2.5 py-1 rounded-md text-[11px]">
+            <span className="text-[#646472] font-sans">SIGNER:</span>
+            <span className="text-[#F2F2EE] font-mono font-medium" title={signingKey}>
+              {displayKey}
             </span>
-          )}
+            <button
+              type="button"
+              onClick={handleCopyKey}
+              className="ml-1 text-[#A0A0AD] hover:text-[#F2F2EE] transition-colors"
+              title="Copy full Ed25519 public key"
+            >
+              {copied ? <CheckIcon className="w-3 h-3 text-[#34D399]" /> : <CopyIcon className="w-3 h-3" />}
+            </button>
+          </div>
+        )}
+
+        <div
+          className={`text-[10px] font-sans font-semibold px-2 py-0.5 rounded-[3px] border uppercase tracking-wider ${
+            chaosArmed
+              ? "bg-[#F59E0B]/10 border-[#F59E0B]/40 text-[#F59E0B]"
+              : "bg-[#18181E] border-[#1E1E24] text-[#646472]"
+          }`}
+        >
+          {chaosArmed ? "Chaos Armed" : "Chaos Standby"}
         </div>
       </div>
     </header>
