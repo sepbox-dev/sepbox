@@ -1,0 +1,32 @@
+name: Feature / Contribution Proposal
+description: Propose a new SEP capability, chaos fault scenario, contract feature, or workbench improvement.
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Target Component
+      options:
+        - engine (FastAPI / SEP / Postgres)
+        - contracts (Soroban / Rust)
+        - inspector (Next.js Workbench)
+        - docs / scripts
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Motivation & Context
+      description: What problem does this solve for Stellar anchor or wallet developers?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] Endpoint/contract behavior implemented
+        - [ ] Automated unit/integration tests added
+        - [ ] Documentation updated
+    validations:
+      required: true

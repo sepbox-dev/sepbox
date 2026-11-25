@@ -1,0 +1,37 @@
+name: Bug Report
+description: Report a protocol mismatch, engine crash, contract bug, or inspector UI issue.
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - engine (FastAPI / SEP / Postgres)
+        - contracts (Soroban / Rust)
+        - inspector (Next.js Workbench)
+        - docker / ci / scripts
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Run `docker compose up --build -d`
+        2. Send request to `/sep24/...`
+        3. Observe error...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Response Output
+      render: shell
