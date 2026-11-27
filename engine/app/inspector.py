@@ -12,6 +12,7 @@ from app.chaos import get_chaos_config
 from app.config import get_anchor_keypair, get_settings
 from app.db import get_db
 from app.models import KycCustomer, Quote, Sep24Transaction, WebhookDelivery, WebhookSubscription
+from app.tracing import get_request_id
 
 router = APIRouter(prefix="/admin", tags=["Inspector"])
 
@@ -25,12 +26,14 @@ async def traffic_inspector_middleware(request: Request, call_next):
     if path.startswith("/admin/") or request.method == "OPTIONS":
         return await call_next(request)
 
+    request_id = getattr(request.state, "request_id", "") or get_request_id()
     start = time.perf_counter()
     response = await call_next(request)
     duration_ms = round((time.perf_counter() - start) * 1000.0, 2)
 
     entry: dict[str, object] = {
         "id": str(uuid.uuid4()),
+        "request_id": request_id,
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "method": request.method,
         "path": path,
@@ -49,6 +52,7 @@ async def traffic_inspector_middleware(request: Request, call_next):
 @router.get("/traffic")
 def get_traffic_log(
     prefix: str | None = Query(default=None),
+    request_id: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=BUFFER_CAPACITY),
 ):
     with _lock:
@@ -56,6 +60,8 @@ def get_traffic_log(
 
     if prefix:
         items = [item for item in items if str(item["path"]).startswith(prefix)]
+    if request_id:
+        items = [item for item in items if item.get("request_id") == request_id]
 
     sliced = items[:limit]
     return {

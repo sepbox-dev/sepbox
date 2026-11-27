@@ -25,10 +25,23 @@ def test_traffic_inspector_captures_requests_and_ignores_self():
     assert all(event["chaos_injected"] is False for event in log["events"])
     assert all(event["duration_ms"] >= 0 for event in log["events"])
     assert all("application/json" in event["content_type"] for event in log["events"])
+    assert all(bool(event["request_id"]) for event in log["events"])
 
     # Polling /admin/traffic must not add itself to the ring buffer
     second_poll = client.get("/admin/traffic").json()
     assert second_poll["count"] == 2
+
+
+def test_traffic_inspector_correlates_and_filters_by_request_id():
+    res1 = client.get("/sep24/info", headers={"X-Request-ID": "trace-alpha-1"})
+    res2 = client.get("/sep38/info", headers={"X-Request-ID": "trace-beta-2"})
+    assert res1.status_code == 200
+    assert res2.status_code == 200
+
+    filtered = client.get("/admin/traffic", params={"request_id": "trace-alpha-1"}).json()
+    assert filtered["count"] == 1
+    assert filtered["events"][0]["path"] == "/sep24/info"
+    assert filtered["events"][0]["request_id"] == "trace-alpha-1"
 
 
 def test_traffic_inspector_ignores_admin_polling_and_options_preflight():
@@ -55,6 +68,7 @@ def test_traffic_inspector_flags_chaos_injected_responses():
     event = filtered["events"][0]
     assert event["status_code"] == 503
     assert event["chaos_injected"] is True
+    assert event["request_id"] == faulted.headers.get("x-request-id")
 
 
 def test_admin_overview_reports_live_counts_and_anchor_state():
