@@ -9,6 +9,7 @@ from app.sep10 import router as sep10_router
 from app.sep12 import router as sep12_router
 from app.sep24 import router as sep24_router
 from app.sep38 import router as sep38_router
+from app.tracing import RequestTracingMiddleware
 from app.webhooks import router as webhooks_router
 
 app = FastAPI(
@@ -17,7 +18,8 @@ app = FastAPI(
     description="Local-first Stellar SEP Anchor & Chaos Testing Engine",
 )
 
-# Middleware executes outermost-last: CORS -> Traffic Inspector -> Chaos -> Route
+# Middleware executes outermost-first (last registered wraps outermost):
+# RequestTracing -> CORS -> Traffic Inspector -> Chaos -> Route
 app.middleware("http")(chaos_middleware)
 app.middleware("http")(traffic_inspector_middleware)
 
@@ -26,7 +28,9 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID", "X-SEPBox-Chaos-Injected"],
 )
+app.add_middleware(RequestTracingMiddleware)
 
 app.include_router(sep1_router)
 app.include_router(sep10_router)
