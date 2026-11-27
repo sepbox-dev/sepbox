@@ -6,6 +6,9 @@
 
 Wallet and fintech teams building on Stellar typically struggle to test `SEP-1`, `SEP-10`, `SEP-12`, `SEP-24`, and `SEP-38` integrations against unreliable public test anchors—especially edge cases like `503` outages, latency spikes, truncated JSON responses, expired quotes, or failed webhook deliveries. **SEPBox** gives you a deterministic, Dockerized anchor stack on `localhost` with real Ed25519 cryptography, PostgreSQL persistence, a Soroban settlement vault contract, and a real-time inspection UI.
 
+![SEPBox Live Traffic & Chaos Workbench](docs/assets/workbench.png)
+*SEPBox 3-pane Workbench: live SEP-1/10/12/24/38 traffic stream, Chaos fault injection (`503` + latency), and real-time request/cURL inspection.*
+
 ---
 
 ## Architecture
